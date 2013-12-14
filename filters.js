@@ -1,83 +1,74 @@
+/// <reference path="FilterClasses/GrayscaleFilter.js" />
+/// <reference path="FilterClasses/ConvolutionFilter.js" />
+/// <reference path="FilterClasses/ConvolutionKernel.js" />
+/// <reference path="FilterClasses/ConvolutionFilter.js" />
+/// <reference path="FilterClasses/ConvolutionKernel.js" />
+/// <reference path="FilterClasses/TargetColorFilter.js" />
 /// <reference path="Color.js" />
 /// <reference path="ImageDataHelper.js" />
+/// <reference path="jquery-2.0.0.js" />
 if (window.netscape && netscape.security && netscape.security.PrivilegeManager) {
 	netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead");
 }
 
 var context = document.getElementById("filter-canvas").getContext("2d");
 var hiddenContext = document.getElementById("hidden-canvas").getContext("2d");
-var imageDataHelper;
 
 var imagePath = "leaves.jpg";
 var image = new Image();
 image.src = imagePath;
 
-var targetColor = new Color(255, 255, 0);
+var fixDimensions = function fixDimensions() {
+    // main
+    var canvasContainer = $("#canvas-container");
+    context.canvas.width = hiddenContext.canvas.width = canvasContainer.width();
+    context.canvas.height = hiddenContext.canvas.height = canvasContainer.height();
 
-var maxDistance = 150;
+    // Scale image so that it fills the entire screen
+    var imageToCanvasWidth = context.canvas.width / image.width,
+        imageToCanvasHeight = context.canvas.height / image.height;
 
-var areColorsTooDifferent = function (color1, color2, threshold) {
-    threshold = threshold || 0.1 * 255; // Default value
-
-	return Math.abs(color1.r - color2.r) >= threshold || 
-		Math.abs(color1.g - color2.g) >= threshold || 
-		Math.abs(color1.b - color2.b) >= threshold;
+    context.scale(imageToCanvasWidth, imageToCanvasHeight);
+    hiddenContext.scale(imageToCanvasWidth, imageToCanvasHeight);
+    draw();
 };
+//$(window).resize(fixDimensions);
 
-function targetColorPredicate(color1, color2) {
-    return color1.calculateDistanceTo(color2) >= maxDistance; // If the geometric distance between the color is larger than a threshold
-    //return areColorsTooDifferent(color1, color2); // If the 
-};
 
-function convertToGrayscale(color) {
-    //return (color.r + color.g + color.b) / 3; // Arithmetic mean
-    return ~~((color.calculateLength() / Color.basicColors.white.calculateLength()) * 255); // Geometric mean over maximum geometric mean ~ 441
+var imageDataHelper;
 
-};
 
 var draw = function () {
-	hiddenContext.drawImage(image, 0, 0);
-	
-	var imageData = hiddenContext.getImageData(0, 0, hiddenContext.canvas.width, hiddenContext.canvas.height);
+    hiddenContext.drawImage(image, 0, 0);
+    var imageData = hiddenContext.getImageData(0, 0, hiddenContext.canvas.width, hiddenContext.canvas.height);
 	var data = imageData.data;
 	imageDataHelper = new ImageDataHelper(imageData);
 
-	for (var i = 0; i < data.length; i += 4) {
-	    var color = imageDataHelper.colorAt(i);
-		
-	    if (targetColorPredicate(targetColor, color)) {
-	        var grayscale = convertToGrayscale(color);
-	        data[i] = data[i + 1] = data[i + 2] = grayscale;
-		}
-	}
+	var targetColor = new Color(255, 0, 0);
+	var maxDistance = 100;
+	var grayscaleAlgo = Color.grayscaleAlgorithms.arithmeticMean;
+	var usePerComponentPredicate = false;
+
+	var filter = new TargetColorFilter(targetColor, maxDistance, grayscaleAlgo, usePerComponentPredicate);
+	//filter.transformImage(imageDataHelper);
 	
-    // Antialiasing
+    //var filter = new ConvolutionFilter(ConvolutionFilter.predefinedKernels.edgeDetectionHard);
+	var kernel = ConvolutionFilter.predefinedKernels.sharpen;
+	//kernel.normalize();
+	filter = new ConvolutionFilter(kernel);
+	filter.transformImage(imageDataHelper);
+	//filter = new GrayscaleFilter();
+	//filter.transformImage(imageDataHelper);
     
-	for (var i = 0; i < data.length; i += 4) {
-		var coordinate = i;
-		var neighbours = imageDataHelper.getAreaColors(imageDataHelper.getNeighbours(coordinate, imageData), data);
-		var totalColor = new Color(0, 0, 0);
-		for (var k = 0; k < neighbours.length; k++) {
-			var current = neighbours[k];
-			
-			totalColor.r += current.r;
-			totalColor.g += current.g;
-			totalColor.b += current.b;				
-		}
-		var pixel = imageDataHelper.colorAt(coordinate);
-		totalColor.r /= neighbours.length;
-		totalColor.g /= neighbours.length;
-		totalColor.b /= neighbours.length;
-		if (areColorsTooDifferent(totalColor, pixel)) {		
-		    data[coordinate] = totalColor.r;
-		    data[coordinate + 1] = totalColor.g;
-		    data[coordinate + 2] = totalColor.b;	
-		}
-	}
+    // Antialiasing    
+	//imageDataHelper.antialias();
 	// End AA
 	
 	context.putImageData(imageData, 0, 0, 0, 0, imageData.width, imageData.height);
+
+	console.log("done");
+
 };
 image.onload = function () {
-	draw();
+    fixDimensions();
 }
