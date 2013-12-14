@@ -1,3 +1,4 @@
+/// <reference path="FilterClasses/InvertFilter.js" />
 /// <reference path="FilterClasses/GrayscaleFilter.js" />
 /// <reference path="FilterClasses/ConvolutionFilter.js" />
 /// <reference path="FilterClasses/ConvolutionKernel.js" />
@@ -37,7 +38,7 @@ var fixDimensions = function fixDimensions() {
 
 var imageDataHelper;
 
-
+var kernel;
 var draw = function () {
     hiddenContext.drawImage(image, 0, 0);
     var imageData = hiddenContext.getImageData(0, 0, hiddenContext.canvas.width, hiddenContext.canvas.height);
@@ -49,17 +50,16 @@ var draw = function () {
 	var grayscaleAlgo = Color.grayscaleAlgorithms.arithmeticMean;
 	var usePerComponentPredicate = false;
 
-	var filter = new TargetColorFilter(targetColor, maxDistance, grayscaleAlgo, usePerComponentPredicate);
-	//filter.transformImage(imageDataHelper);
-	
-    //var filter = new ConvolutionFilter(ConvolutionFilter.predefinedKernels.edgeDetectionHard);
-	var kernel = ConvolutionFilter.predefinedKernels.sharpen;
-	//kernel.normalize();
-	filter = new ConvolutionFilter(kernel);
-	filter.transformImage(imageDataHelper);
-	//filter = new GrayscaleFilter();
-	//filter.transformImage(imageDataHelper);
-    
+	kernel = ConvolutionKernel.predefinedKernels.emboss;
+
+	var filter;
+    //filter = new TargetColorFilter(targetColor, maxDistance, grayscaleAlgo, usePerComponentPredicate);
+    filter = new ConvolutionFilter(kernel);
+    //filter = new ConvolutionFilter(ConvolutionFilter.predefinedKernels.edgeDetectionHard);
+    //filter = new GrayscaleFilter();
+	//filter = new InvertFilter();
+
+    filter.transformImage(imageDataHelper);
     // Antialiasing    
 	//imageDataHelper.antialias();
 	// End AA

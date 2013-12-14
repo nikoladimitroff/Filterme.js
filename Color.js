@@ -48,6 +48,10 @@
         }
     };
 
+    Color.prototype.invert = function invert() {
+        return new Color(255 - this.r, 255 - this.g, 255 - this.b);
+    };
+
     Color.prototype.perComponentMultiply = function (color) {
         return new Color(this.r * color.r, this.g * color.g, this.b * color.b);
     };
