@@ -8,8 +8,8 @@ var ImageDataHelper = (function () {
 
     ImageDataHelper.prototype.arrayCoordinatesToXY = function (arrayCoordinate) {
         var coordinate = arrayCoordinate / 4;
-        var x = ~~(coordinate / this.imageData.width);
-        var y = ~~(coordinate % this.imageData.width);
+        var x = ~~(coordinate % this.imageData.width);
+        var y = ~~(coordinate / this.imageData.width);
 
         return {
             x: x,
@@ -17,8 +17,8 @@ var ImageDataHelper = (function () {
         };
     };
 
-    ImageDataHelper.prototype.xyToArrayCoordinates = function (x, y) {
-        return (x * this.imageData.width + y) * 4;
+    ImageDataHelper.prototype.xyToArrayCoordinate = function (x, y) {
+        return (x + this.imageData.width * y) * 4;
     };
 
     ImageDataHelper.prototype.getAreaColors = function (area) {
@@ -42,23 +42,23 @@ var ImageDataHelper = (function () {
         var width = this.imageData.width,
             height = this.imageData.height;
 
-        var coord = this.xyToArrayCoordinates(x, y);
+        var coord = this.xyToArrayCoordinate(x, y);
         var neighbours = [coord];
 
         if (x > 0) {
-            coord = this.xyToArrayCoordinates(x - 1, y);
+            coord = this.xyToArrayCoordinate(x - 1, y);
             neighbours.push(coord);
         }
         if (x < width - 1) {
-            coord = this.xyToArrayCoordinates(x + 1, y);
+            coord = this.xyToArrayCoordinate(x + 1, y);
             neighbours.push(coord);
         }
         if (y > 0) {
-            coord = this.xyToArrayCoordinates(x, y + 1);
+            coord = this.xyToArrayCoordinate(x, y + 1);
             neighbours.push(coord);
         }
         if (y < height - 1) {
-            coord = this.xyToArrayCoordinates(x, y - 1);
+            coord = this.xyToArrayCoordinate(x, y - 1);
             neighbours.push(coord);
         }
 
@@ -68,8 +68,8 @@ var ImageDataHelper = (function () {
     ImageDataHelper.prototype.getExtendedVirtualNeighbours = function (arrayCoordinates, size) {
         var xy = this.arrayCoordinatesToXY(arrayCoordinates);
         var topLeft = {
-            row: xy.x - ~~(size / 2),
-            col: xy.y - ~~(size / 2),
+            row: xy.y - ~~(size / 2),
+            col: xy.x - ~~(size / 2),
         };
 
         var neighbours = [];
@@ -90,7 +90,7 @@ var ImageDataHelper = (function () {
                 else if (actualCol > columns - 1)
                     actualCol = columns - 1;
 
-                neighbours.push(this.xyToArrayCoordinates(actualRow, actualCol));
+                neighbours.push(this.xyToArrayCoordinate(actualCol, actualRow));
             }
         }
 

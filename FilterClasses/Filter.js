@@ -1,5 +1,6 @@
 ﻿/// <reference path="../ImageDataHelper.js" />
 /// <reference path="../Color.js" />
+"use strict";
 var Filter = (function () {
 
     function Filter() {
