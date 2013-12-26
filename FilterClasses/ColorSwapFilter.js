@@ -33,17 +33,16 @@ var ColorSwapFilter = (function () {
         var data = imageDataHelper.data;
         for (var i = 0; i < data.length; i += 4) {
             var color = imageDataHelper.colorAt(i);
-
             // If the color closely resembles on the spefied, swap
             if (this.targetColorPredicate(this.color1, color)) {
-                data[i] = (data[i] - this.color1.r) +  this.color2.r;
-                data[i + 1] = (data[i + 1] - this.color1.g) + this.color2.g;
-                data[i + 2] = (data[i + 2] - this.color1.b) + this.color2.b;
+                data[i] = this.color2.r;
+                data[i + 1] = this.color2.g;
+                data[i + 2] = this.color2.b;
             }
             if (this.targetColorPredicate(this.color2, color)) {
-                data[i] = (data[i] - this.color2.r) + this.color1.r;
-                data[i + 1] = (data[i + 1] - this.color2.r) + this.color1.g;
-                data[i + 2] = (data[i + 2] - this.color2.r) + this.color1.b;
+                data[i] = this.color1.r;
+                data[i + 1] = this.color1.g;
+                data[i + 2] = this.color1.b;
             }
         }
     };

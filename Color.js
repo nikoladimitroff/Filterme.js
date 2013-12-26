@@ -90,6 +90,22 @@
         geometricMean: 1,
     };
 
+    Color.areTooDifferentPerComponent = function (color1, color2, threshold) {
+        threshold = threshold || 0.1 * 255; // Default value
+
+        return Math.abs(color1.r - color2.r) >= threshold ||
+            Math.abs(color1.g - color2.g) >= threshold ||
+            Math.abs(color1.b - color2.b) >= threshold;
+    };
+
+
+    Color.lerp = function (color1, color2, distance) {
+        return new Color(
+            color1.r * (1 - distance) + color2.r * distance,
+            color1.g * (1 - distance) + color2.g * distance,
+            color1.b * (1 - distance) + color2.b * distance);
+    };
+
     Color.fromHsl = function (h, s, l) {
         return hslToRgb(h, s, l);
     };
@@ -153,16 +169,6 @@
         this.g = Math.min(Math.max(0, this.g), 255);
         this.b = Math.min(Math.max(0, this.b), 255);
     };
-
-
-    Color.areTooDifferentPerComponent = function (color1, color2, threshold) {
-        threshold = threshold || 0.1 * 255; // Default value
-
-        return Math.abs(color1.r - color2.r) >= threshold ||
-            Math.abs(color1.g - color2.g) >= threshold ||
-            Math.abs(color1.b - color2.b) >= threshold;
-    };
-
 
     return Color;
 })();

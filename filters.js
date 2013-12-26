@@ -1,3 +1,5 @@
+/// <reference path="FilterClasses/BlendFilter.js" />
+/// <reference path="FilterClasses/EmphasizeFilter.js" />
 /// <reference path="FilterClasses/RotateFilter.js" />
 /// <reference path="FilterClasses/LayeredFilter.js" />
 /// <reference path="FilterClasses/InvertFilter.js" />
@@ -64,27 +66,22 @@ var draw = function () {
 	                                 -1, -1, 30, -1, -1,
 	                                 -1, -1, -1, -1, -1,
 	                                 -1, -1, -5, -1, -1,
-	                                ], 100);
-	var filter;
-    //filter = new TargetColorFilter(targetColor, maxDistance, grayscaleAlgo, usePerComponentPredicate);
-    filter = new ConvolutionFilter(kernel);
-    //filter = new ConvolutionFilter(ConvolutionFilter.predefinedKernels.edgeDetectionHard);
-	//filter = new GrayscaleFilter();
-	//filter = new ColorSwapFilter(Color.basicColors.white, Color.basicColors.blue, 150);
-    //filter = new InvertFilter();
+	], 100);
+	var red = new EmphasizeFilter(0, 40);
+	var green = new EmphasizeFilter(1, 40);
+	var blue = new EmphasizeFilter(2, 40);
+	var edgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.edgeDetectionHard);
+	var identity = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.identity);
+	var brighten = new ConvolutionFilter(ConvolutionKernel.computeLightnessModifyingKernel(1.5));
+	var coloredEdgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.coloredEdgeDetection);
 
-    filter = new LayeredFilter([
-        new ConvolutionFilter(ConvolutionKernel.predefinedKernels.blur),
-        new ConvolutionFilter(ConvolutionKernel.computeLightnessModifyingKernel(5)),
-        new ConvolutionFilter(kernel),
-        new ConvolutionFilter(ConvolutionKernel.computeLightnessModifyingKernel(1/5))
-    ]);
-
-    //filter = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.edgeDetectionHard);
+	var rotations = [new RotateFilter(0), new RotateFilter(Math.PI / 2)]//, new RotateFilter(Math.PI), new RotateFilter(Math.PI * 1.5)];
+	var filter = new BlendFilter(rotations);
 
     //filter = new RotateFilter(Math.PI / 2);
-
     filter.transformImage(imageDataHelper);
+	//coloredEdgeDetection.transformImage(imageDataHelper);
+	//brighten.transformImage(imageDataHelper);
     // Antialiasing    
 	//imageDataHelper.antialias();
     // End AA
