@@ -117,21 +117,25 @@ var ConvolutionKernel = (function () {
         },
     });
 
-ConvolutionKernel.computeGaussianBlurKernel = function (sigma) {
+ConvolutionKernel.computeGaussianBlurKernel = function (radius) {
     var pi = Math.PI;
-    var size = 7;
+    var sigma = radius / 6;
+    var radius = radius | 1; // Make radius odd
+    var radiusOverTwo = ~~(radius / 2); // Make it integer
     var twoSigmaSquared = 2 * sigma * sigma;
+    var mainConstant = (1 / (pi * twoSigmaSquared));
     var lengthSquared = 0;
     var kernel = [];
-    for (var i = 0; i < size; i++) {
-        for (var j = 0; j < size; j++) {
-            var index = i * size + j;
-            var x = i - size,
-                y = j - size;
-            kernel[index] = (1 / (pi * twoSigmaSquared) * Math.exp(-(x * x + y * y) / twoSigmaSquared))
+    
+    for (var y = radiusOverTwo; y > -radiusOverTwo - 1; y--) {
+        for (var x = -radiusOverTwo; x < radiusOverTwo + 1; x++) {            
+            kernel.push(mainConstant * Math.exp(-(x * x + y * y) / twoSigmaSquared));
         }
     }
-    return new ConvolutionKernel(kernel);
+
+    var result = new ConvolutionKernel(kernel);
+    result.normalize();
+    return result;
 };
 
 ConvolutionKernel.computeLightnessModifyingKernel = function (lightnessModifier) {

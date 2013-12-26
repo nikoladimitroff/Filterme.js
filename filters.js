@@ -1,5 +1,5 @@
 /// <reference path="FilterClasses/BlendFilter.js" />
-/// <reference path="FilterClasses/EmphasizeFilter.js" />
+/// <reference path="FilterClasses/AdditiveFiter.js" />
 /// <reference path="FilterClasses/RotateFilter.js" />
 /// <reference path="FilterClasses/LayeredFilter.js" />
 /// <reference path="FilterClasses/InvertFilter.js" />
@@ -18,7 +18,7 @@ if (window.netscape && netscape.security && netscape.security.PrivilegeManager) 
 var context = document.getElementById("filter-canvas").getContext("2d");
 var hiddenContext = document.getElementById("hidden-canvas").getContext("2d");
 
-var imagePath = "Images/walle.jpg";
+var imagePath = "Images/tiger.jpg";
 var image = new Image();
 image.src = imagePath;
 
@@ -67,20 +67,21 @@ var draw = function () {
 	                                 -1, -1, -1, -1, -1,
 	                                 -1, -1, -5, -1, -1,
 	], 100);
-	var red = new EmphasizeFilter(0, 40);
-	var green = new EmphasizeFilter(1, 40);
-	var blue = new EmphasizeFilter(2, 40);
+	var red = new AdditiveFiter(new Color(40, 0, 0));
+	var green = new AdditiveFiter(new Color(0, 40, 0));
+	var blue = new AdditiveFiter(new Color(0, 0, 40));
 	var edgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.edgeDetectionHard);
 	var identity = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.identity);
 	var brighten = new ConvolutionFilter(ConvolutionKernel.computeLightnessModifyingKernel(1.5));
 	var coloredEdgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.coloredEdgeDetection);
+	var gaussian = new ConvolutionFilter(ConvolutionKernel.computeGaussianBlurKernel(10));
 
-	var rotations = [new RotateFilter(0), new RotateFilter(Math.PI / 2)]//, new RotateFilter(Math.PI), new RotateFilter(Math.PI * 1.5)];
-	var filter = new BlendFilter(rotations);
-
+	var rotations = [new RotateFilter(0), new RotateFilter(Math.PI / 2), new RotateFilter(Math.PI), new RotateFilter(Math.PI * 1.5), red];
+	var filter = new BlendFilter([gaussian, edgeDetection]);
     //filter = new RotateFilter(Math.PI / 2);
     filter.transformImage(imageDataHelper);
-	//coloredEdgeDetection.transformImage(imageDataHelper);
+	//edgeDetection.transformImage(imageDataHelper);
+	//gaussian.transformImage(imageDataHelper);
 	//brighten.transformImage(imageDataHelper);
     // Antialiasing    
 	//imageDataHelper.antialias();
@@ -89,7 +90,7 @@ var draw = function () {
 	context.putImageData(imageDataHelper.imageData, 0, 0, 0, 0, imageData.width, imageData.height);
 
 	console.log("done", Date.now() - start);
-
+	filter.kernel.prettyPrint();
 };
 image.onload = function () {
     fixDimensions();

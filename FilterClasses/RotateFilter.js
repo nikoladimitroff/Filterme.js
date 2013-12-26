@@ -45,8 +45,8 @@ var RotateFilter = (function () {
 
         var s = this.sine;
         var c = this.cosine;
-        var originX = imageDataHelper.imageData.width,
-            originY = imageDataHelper.imageData.height;
+        var originX = imageDataHelper.imageData.width / 2,
+            originY = imageDataHelper.imageData.height / 2;
         for (var i = 0; i < data.length; i += 4) {
 
             var coordinates = imageDataHelper.arrayCoordinatesToXY(i);

@@ -61,10 +61,6 @@ var BlendFilter = (function () {
         for (var i = 1; i < this.filters.length; i++) {
             this.filters[i].transformImage(imageDataHelper);
 
-            //for (var j = 0; j < size; j++) {
-            //    var transformed = imageDataHelper.colorAt(j).scalarMultiply(this.weights[i]);
-            //    renderTarget[j] = renderTarget[j].add(transformed);
-            //}
             for (var j = 0; j < data.length; j += 4) {
                 var transformed = imageDataHelper.colorAt(j).scalarMultiply(this.weights[i]);
                 renderTarget[j] += transformed.r;
@@ -75,15 +71,7 @@ var BlendFilter = (function () {
         }
 
         data.set(renderTarget);
-
-        //for (var i = 0; i < renderTarget.length; i++) {
-        //    var index = i * 4;
-        //    data[index] = renderTarget[i].r;
-        //    data[index + 1] = renderTarget[i].g;
-        //    data[index + 2] = renderTarget[i].b;
-        //}
     };
-
 
     return BlendFilter;
 })();
