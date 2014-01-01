@@ -11,6 +11,7 @@
 /// <reference path="FilterClasses/ColorSwapFilter.js" />
 /// <reference path="ImageDataHelper.js" />
 /// <reference path="jquery-2.0.0.js" />
+/// <reference path="FilterClasses/PixelizeFilter.js" />
 if (window.netscape && netscape.security && netscape.security.PrivilegeManager) {
 	netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead");
 }
@@ -77,8 +78,10 @@ var draw = function () {
 	var gaussian = new ConvolutionFilter(ConvolutionKernel.computeGaussianBlurKernel(10));
 
 	var rotations = [new RotateFilter(0), new RotateFilter(Math.PI / 2), new RotateFilter(Math.PI), new RotateFilter(Math.PI * 1.5), red];
-	var filter = new BlendFilter([gaussian, edgeDetection]);
+	//var filter = new BlendFilter([gaussian, edgeDetection]);
     //filter = new RotateFilter(Math.PI / 2);
+
+	filter = new PixelizeFilter(10);
     filter.transformImage(imageDataHelper);
 	//edgeDetection.transformImage(imageDataHelper);
 	//gaussian.transformImage(imageDataHelper);
