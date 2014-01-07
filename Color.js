@@ -1,4 +1,5 @@
-﻿var Color = (function () {
+﻿"use strict";
+var Color = (function () {
     function Color(r, g, b) {
         this.r = r;
         this.g = g;

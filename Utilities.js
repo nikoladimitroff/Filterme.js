@@ -29,6 +29,5 @@
         value: checkCpuLittleEndianness(),
     });
 
-
     return Utilities;
 })();

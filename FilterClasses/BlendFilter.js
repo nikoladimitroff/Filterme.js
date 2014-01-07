@@ -16,7 +16,7 @@ var BlendFilter = (function () {
             }
         }
         else if (weights.constructor != Array) {
-                throw new TypeError("weights must be an array");
+            throw new TypeError("weights must be an array");
         }
         
         var sum = 0;
@@ -44,10 +44,6 @@ var BlendFilter = (function () {
         buffer.set(data);
         
         this.filters[0].transformImage(imageDataHelper);
-        //for (var i = 0; i < size; i++) {
-        //    var color = imageDataHelper.colorAt(i).scalarMultiply(this.weights[0]);
-        //    renderTarget.push(color);
-        //}
 
         for (var j = 0; j < data.length; j += 4) {
             var transformed = imageDataHelper.colorAt(j).scalarMultiply(this.weights[0]);
