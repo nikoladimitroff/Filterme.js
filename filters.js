@@ -1,5 +1,5 @@
 /// <reference path="FilterClasses/BlendFilter.js" />
-/// <reference path="FilterClasses/AdditiveFiter.js" />
+/// <reference path="FilterClasses/AdditiveFilter.js" />
 /// <reference path="FilterClasses/RotateFilter.js" />
 /// <reference path="FilterClasses/LayeredFilter.js" />
 /// <reference path="FilterClasses/InvertFilter.js" />
@@ -43,6 +43,20 @@ var fixDimensions = function fixDimensions() {
 var imageDataHelper;
 var kernel;
 
+function spreadArrayEvenly(arraySize) {
+    for (var i = 1; i < arraySize; i++) {
+        var j = arraySize / i;
+        if (j == ~~j && i >= j) {
+            return {
+                width: j,
+                height: i
+            };
+        }
+    }
+    return { width: arraySize, height: 1 };
+}
+
+var filters;
 var draw = function () {
     var start = Date.now();
     hiddenContext.drawImage(image, 0, 0);
@@ -68,21 +82,30 @@ var draw = function () {
 	                                 -1, -1, -1, -1, -1,
 	                                 -1, -1, -5, -1, -1,
 	], 100);
-	var red = new AdditiveFiter(new Color(40, 0, 0));
-	var green = new AdditiveFiter(new Color(0, 40, 0));
-	var blue = new AdditiveFiter(new Color(0, 0, 40));
+	var red = new AdditiveFilter(new Color(40, 0, 0));
+	red.name = "Red";
+	var green = new AdditiveFilter(new Color(0, 40, 0));
+	green.name = "Green";
+	var blue = new AdditiveFilter(new Color(0, 0, 40));
+	blue.name = "Blue";
 	var edgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.edgeDetectionHard);
+	edgeDetection.name = "Edge Detection";
+	var emboss = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.emboss);
+	emboss.name = "Emboss";
 	var identity = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.identity);
 	var brighten = new ConvolutionFilter(ConvolutionKernel.computeLightnessModifyingKernel(1.5));
+	brighten.name = "Lightness, 1.5";
 	var coloredEdgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.coloredEdgeDetection);
+	coloredEdgeDetection.name = "Colored Edge Detection";
+	var pixelize = new PixelizeFilter(10);
+	pixelize.name = "Pixelize";
+
 	var gaussian = new ConvolutionFilter(ConvolutionKernel.computeGaussianBlurKernel(10));
 
 	var rotations = [new RotateFilter(0), new RotateFilter(Math.PI / 2), new RotateFilter(Math.PI), new RotateFilter(Math.PI * 1.5), red];
 	//var filter = new BlendFilter([gaussian, edgeDetection]);
     //filter = new RotateFilter(Math.PI / 2);
 
-	var pixelize = new PixelizeFilter(10);
-    pixelize.transformImage(imageDataHelper);
 	//edgeDetection.transformImage(imageDataHelper);
 	//gaussian.transformImage(imageDataHelper);
 	//brighten.transformImage(imageDataHelper);
@@ -90,14 +113,33 @@ var draw = function () {
 	//imageDataHelper.antialias();
     // End AA
 
-    var filters = [red, green, blue, edgeDetection, brighten, coloredEdgeDetection, pixelize];
-    var size = hiddenContext.canvas.width / filters.length;
-    for (var i = 0; i < filters.length; i++) {
-        var imageData = hiddenContext.getImageData(i * size, 0, size, hiddenContext.canvas.height);
-        var helper = new ImageDataHelper(imageData);
-        filters[i].transformImage(helper);
+    filters = [red, green, blue, brighten, coloredEdgeDetection, edgeDetection, emboss, pixelize];
+    var matrixSize = spreadArrayEvenly(filters.length);
+    var size = {
+        width: hiddenContext.canvas.width / matrixSize.width,
+        height: hiddenContext.canvas.height / matrixSize.height
+    }
 
-        context.putImageData(helper.imageData, i * size, 0);
+    var fontSize = size.height / 5;
+    context.font = fontSize + "px Segoe UI";
+    for (var i = 0; i < matrixSize.height; i++) {
+        for (var j = 0; j < matrixSize.width; j++) {
+            var imageData = hiddenContext.getImageData(context.canvas.width / 2 - size.width / 2, context.canvas.height / 2 - size.height / 2, size.width, size.height);
+            var helper = new ImageDataHelper(imageData);
+            var filter = filters[i * matrixSize.width + j]
+            filter.transformImage(helper);
+
+            context.putImageData(helper.imageData, j * size.width, i * size.height);
+            context.save();
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.fillStyle = "white";
+            var text = filter.name;
+            context.fillText(text, j * size.width, (i + 1) * size.height - fontSize, size.width);
+            context.restore();
+        }
+    }
+
+    for (var i = 0; i < filters.length; i++) {
     }
 	
 	//context.putImageData(imageDataHelper.imageData, 0, 0, 0, 0, imageData.width, imageData.height);

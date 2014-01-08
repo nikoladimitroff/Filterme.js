@@ -1,17 +1,17 @@
 ﻿/// <reference path="../ImageDataHelper.js" />
 /// <reference path="../Color.js" />
 /// <reference path="Filter.js" />
-var AdditiveFiter = (function () {
-    function AdditiveFiter(color) {
+var AdditiveFilter = (function () {
+    function AdditiveFilter(color) {
         if (color.constructor != Color) {
             throw new TypeError("color must be an instance of Color");
         }
         this.color = color;
     };
 
-    inheritClassFrom(AdditiveFiter, Filter);
+    inheritClassFrom(AdditiveFilter, Filter);
 
-    AdditiveFiter.prototype.transformImage = function (imageDataHelper) {
+    AdditiveFilter.prototype.transformImage = function (imageDataHelper) {
         var data = imageDataHelper.data;
         var color = this.color;
 
@@ -22,5 +22,5 @@ var AdditiveFiter = (function () {
         }
     };
 
-    return AdditiveFiter;
+    return AdditiveFilter;
 })();
