@@ -6,7 +6,7 @@
 /// <reference path="FilterClasses/GrayscaleFilter.js" />
 /// <reference path="FilterClasses/ConvolutionFilter.js" />
 /// <reference path="FilterClasses/ConvolutionKernel.js" />
-/// <reference path="FilterClasses/TargetColorFilter.js" />
+/// <reference path="FilterClasses/EmphasizeColorFilter.js" />
 /// <reference path="Color.js" />
 /// <reference path="FilterClasses/ColorSwapFilter.js" />
 /// <reference path="ImageDataHelper.js" />
@@ -19,7 +19,7 @@ if (window.netscape && netscape.security && netscape.security.PrivilegeManager) 
 var context = document.getElementById("filter-canvas").getContext("2d");
 var hiddenContext = document.getElementById("hidden-canvas").getContext("2d");
 
-var imagePath = "Images/tiger.jpg";
+var imagePath = "Images/walle.jpg";
 var image = new Image();
 image.src = imagePath;
 
@@ -81,19 +81,29 @@ var draw = function () {
 	//var filter = new BlendFilter([gaussian, edgeDetection]);
     //filter = new RotateFilter(Math.PI / 2);
 
-	filter = new PixelizeFilter(10);
-    filter.transformImage(imageDataHelper);
+	var pixelize = new PixelizeFilter(10);
+    pixelize.transformImage(imageDataHelper);
 	//edgeDetection.transformImage(imageDataHelper);
 	//gaussian.transformImage(imageDataHelper);
 	//brighten.transformImage(imageDataHelper);
     // Antialiasing    
 	//imageDataHelper.antialias();
     // End AA
+
+    var filters = [red, green, blue, edgeDetection, brighten, coloredEdgeDetection, pixelize];
+    var size = hiddenContext.canvas.width / filters.length;
+    for (var i = 0; i < filters.length; i++) {
+        var imageData = hiddenContext.getImageData(i * size, 0, size, hiddenContext.canvas.height);
+        var helper = new ImageDataHelper(imageData);
+        filters[i].transformImage(helper);
+
+        context.putImageData(helper.imageData, i * size, 0);
+    }
 	
-	context.putImageData(imageDataHelper.imageData, 0, 0, 0, 0, imageData.width, imageData.height);
+	//context.putImageData(imageDataHelper.imageData, 0, 0, 0, 0, imageData.width, imageData.height);
 
 	console.log("done", Date.now() - start);
-	filter.kernel.prettyPrint();
+	//filter.kernel.prettyPrint();
 };
 image.onload = function () {
     fixDimensions();

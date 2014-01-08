@@ -515,50 +515,43 @@ var ColorSwapFilter = (function () {
 
     return ColorSwapFilter;
 })();
-///#source 1 1 /Filters/FilterClasses/TargetColorFilter.js
+///#source 1 1 /Filters/FilterClasses/ConvolutionFilter.js
 /// <reference path="../ImageDataHelper.js" />
 /// <reference path="../Color.js" />
 /// <reference path="Filter.js" />
-var TargetColorFilter = (function () {
+/// <reference path="ConvolutionKernel.js" />
+/// <reference path="Utilities.js" />
+var ConvolutionFilter = (function () {
 
-    function TargetColorFilter(targetColor, predicateThreshold, grayscaleAlgo, usePerComponentPredicate) {
-        if (targetColor.constructor != Color)
-            throw new TypeError("targetColor must be a instance of Color");
-        if (predicateThreshold.constructor != Number || predicateThreshold <= 0)
-            throw new TypeError("predicateThreshold must be a positive number");
+    function ConvolutionFilter(kernel) {
+        if (kernel.constructor != ConvolutionKernel)
+            throw new TypeError("kernel must be an instance of ConvolutionKernel");
 
-        this.targetColor = targetColor;
-        this.predicateThreshold = predicateThreshold;
-        this.grayscaleAlgo = grayscaleAlgo || Color.grayscaleAlgorithms.arithmeticMean;
-        this.usePerComponentPredicate = Boolean(usePerComponentPredicate);
+        this.kernel = kernel;
     };
 
-    inheritClassFrom(TargetColorFilter, Filter);
+    inheritClassFrom(ConvolutionFilter, Filter);
 
-    TargetColorFilter.prototype.targetColorPredicate = function (color) {
-        // In case we are using per component different
-        if (this.usePerComponentPredicate) {
-            return Color.areTooDifferentPerComponent(this.targetColor, color, this.predicateThreshold);
+    ConvolutionFilter.prototype.transformImage = function (imageDataHelper) {
+        var size = imageDataHelper.data.length / 4;
+        var imageData = imageDataHelper.data;
+        var renderTarget = [];
+        for (var i = 0; i < size; i++) {
+            var transformed = this.kernel.multiplyImageAt(i * 4, imageDataHelper);
+            renderTarget.push(transformed);
         }
 
-        // If the geometric distance between the color is larger than a threshold
-        return this.targetColor.calculateDistanceTo(color) >= this.predicateThreshold;
-    };
-
-    TargetColorFilter.prototype.transformImage = function (imageDataHelper) {
-        var data = imageDataHelper.data;
-        for (var i = 0; i < data.length; i += 4) {
-            var color = imageDataHelper.colorAt(i);
-
-            if (this.targetColorPredicate(color)) {
-                var grayscale = color.toGrayscale(this.grayscaleAlgo);
-                data[i] = data[i + 1] = data[i + 2] = grayscale;
-            }
+        var arrayCoordinate = 0;
+        for (var i = 0; i < renderTarget.length; i++) {
+            arrayCoordinate = i * 4;
+            imageData[arrayCoordinate] = renderTarget[i].r;
+            imageData[arrayCoordinate + 1] = renderTarget[i].g;
+            imageData[arrayCoordinate + 2] = renderTarget[i].b;
         }
     };
 
 
-    return TargetColorFilter;
+    return ConvolutionFilter;
 })();
 ///#source 1 1 /Filters/FilterClasses/ConvolutionKernel.js
 /// <reference path="../ImageDataHelper.js" />
@@ -788,44 +781,6 @@ ConvolutionKernel.predefinedKernels.blur.normalize();
 
 return ConvolutionKernel;
 })();
-///#source 1 1 /Filters/FilterClasses/ConvolutionFilter.js
-/// <reference path="../ImageDataHelper.js" />
-/// <reference path="../Color.js" />
-/// <reference path="Filter.js" />
-/// <reference path="ConvolutionKernel.js" />
-/// <reference path="Utilities.js" />
-var ConvolutionFilter = (function () {
-
-    function ConvolutionFilter(kernel) {
-        if (kernel.constructor != ConvolutionKernel)
-            throw new TypeError("kernel must be an instance of ConvolutionKernel");
-
-        this.kernel = kernel;
-    };
-
-    inheritClassFrom(ConvolutionFilter, Filter);
-
-    ConvolutionFilter.prototype.transformImage = function (imageDataHelper) {
-        var size = imageDataHelper.data.length / 4;
-        var imageData = imageDataHelper.data;
-        var renderTarget = [];
-        for (var i = 0; i < size; i++) {
-            var transformed = this.kernel.multiplyImageAt(i * 4, imageDataHelper);
-            renderTarget.push(transformed);
-        }
-
-        var arrayCoordinate = 0;
-        for (var i = 0; i < renderTarget.length; i++) {
-            arrayCoordinate = i * 4;
-            imageData[arrayCoordinate] = renderTarget[i].r;
-            imageData[arrayCoordinate + 1] = renderTarget[i].g;
-            imageData[arrayCoordinate + 2] = renderTarget[i].b;
-        }
-    };
-
-
-    return ConvolutionFilter;
-})();
 ///#source 1 1 /Filters/FilterClasses/GrayscaleFilter.js
 /// <reference path="../ImageDataHelper.js" />
 /// <reference path="../Color.js" />
@@ -876,6 +831,29 @@ var InvertFilter = (function () {
 
 
     return InvertFilter;
+})();
+///#source 1 1 /Filters/FilterClasses/LayeredFilter.js
+/// <reference path="Filter.js" />
+/// <reference path="../ImageDataHelper.js" />
+var LayeredFilter = (function () {
+
+    function LayeredFilter(filters) {
+        if (filters.constructor != Array)
+            throw new TypeError("filters must be an array of filters");
+
+        this.filters = filters;
+    };
+
+    inheritClassFrom(LayeredFilter, Filter);
+
+    LayeredFilter.prototype.transformImage = function (imageDataHelper) {
+        var filters = this.filters;
+        for (var i = 0; i < filters.length; i++) {
+            filters[i].transformImage(imageDataHelper);
+        }
+    };
+
+    return LayeredFilter;
 })();
 ///#source 1 1 /Filters/FilterClasses/PixelizeFilter.js
 /// <reference path="../ImageDataHelper.js" />
@@ -990,26 +968,48 @@ var RotateFilter = (function () {
 
     return RotateFilter;
 })();
-///#source 1 1 /Filters/FilterClasses/LayeredFilter.js
-/// <reference path="Filter.js" />
+///#source 1 1 /Filters/FilterClasses/EmphasizeColorFilter.js
 /// <reference path="../ImageDataHelper.js" />
-var LayeredFilter = (function () {
+/// <reference path="../Color.js" />
+/// <reference path="Filter.js" />
+var EmphasizeColorFilter = (function () {
 
-    function LayeredFilter(filters) {
-        if (filters.constructor != Array)
-            throw new TypeError("filters must be an array of filters");
+    function EmphasizeColorFilter(targetColor, predicateThreshold, grayscaleAlgo, usePerComponentPredicate) {
+        if (targetColor.constructor != Color)
+            throw new TypeError("targetColor must be a instance of Color");
+        if (predicateThreshold.constructor != Number || predicateThreshold <= 0)
+            throw new TypeError("predicateThreshold must be a positive number");
 
-        this.filters = filters;
+        this.targetColor = targetColor;
+        this.predicateThreshold = predicateThreshold;
+        this.grayscaleAlgo = grayscaleAlgo || Color.grayscaleAlgorithms.arithmeticMean;
+        this.usePerComponentPredicate = Boolean(usePerComponentPredicate);
     };
 
-    inheritClassFrom(LayeredFilter, Filter);
+    inheritClassFrom(EmphasizeColorFilter, Filter);
 
-    LayeredFilter.prototype.transformImage = function (imageDataHelper) {
-        var filters = this.filters;
-        for (var i = 0; i < filters.length; i++) {
-            filters[i].transformImage(imageDataHelper);
+    EmphasizeColorFilter.prototype.targetColorPredicate = function (color) {
+        // In case we are using per component different
+        if (this.usePerComponentPredicate) {
+            return Color.areTooDifferentPerComponent(this.targetColor, color, this.predicateThreshold);
+        }
+
+        // If the geometric distance between the color is larger than a threshold
+        return this.targetColor.calculateDistanceTo(color) >= this.predicateThreshold;
+    };
+
+    EmphasizeColorFilter.prototype.transformImage = function (imageDataHelper) {
+        var data = imageDataHelper.data;
+        for (var i = 0; i < data.length; i += 4) {
+            var color = imageDataHelper.colorAt(i);
+
+            if (this.targetColorPredicate(color)) {
+                var grayscale = color.toGrayscale(this.grayscaleAlgo);
+                data[i] = data[i + 1] = data[i + 2] = grayscale;
+            }
         }
     };
 
-    return LayeredFilter;
+
+    return EmphasizeColorFilter;
 })();

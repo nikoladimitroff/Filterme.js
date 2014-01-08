@@ -8,12 +8,12 @@
   <file>/Filters/FilterClasses/AdditiveFilter.js</file>
   <file>/Filters/FilterClasses/BlendFilter.js</file>
   <file>/Filters/FilterClasses/ColorSwapFilter.js</file>
-  <file>/Filters/FilterClasses/TargetColorFilter.js</file>
-  <file>/Filters/FilterClasses/ConvolutionKernel.js</file>
   <file>/Filters/FilterClasses/ConvolutionFilter.js</file>
+  <file>/Filters/FilterClasses/ConvolutionKernel.js</file>
   <file>/Filters/FilterClasses/GrayscaleFilter.js</file>
   <file>/Filters/FilterClasses/InvertFilter.js</file>
+  <file>/Filters/FilterClasses/LayeredFilter.js</file>
   <file>/Filters/FilterClasses/PixelizeFilter.js</file>
   <file>/Filters/FilterClasses/RotateFilter.js</file>
-  <file>/Filters/FilterClasses/LayeredFilter.js</file>
+  <file>/Filters/FilterClasses/EmphasizeColorFilter.js</file>
 </bundle>
