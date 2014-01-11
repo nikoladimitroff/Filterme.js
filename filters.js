@@ -64,10 +64,12 @@ var draw = function () {
 	var data = imageData.data;
 	imageDataHelper = new ImageDataHelper(imageData);
 
-	var targetColor = new Color(0, 0, 255);
-	var maxDistance = 150;
+	var targetColor = new Color(255, 0, 0);
+	var maxDistance = 100;
 	var grayscaleAlgo = Color.grayscaleAlgorithms.geometricMean;
 	var usePerComponentPredicate = false;
+
+	var targetColorFilter = new EmphasizeColorFilter(targetColor, maxDistance, 1);
 
 	kernel = ConvolutionKernel.predefinedKernels.emboss;
 	kernel = new ConvolutionKernel([
@@ -82,28 +84,36 @@ var draw = function () {
 	                                 -1, -1, -1, -1, -1,
 	                                 -1, -1, -5, -1, -1,
 	], 100);
+
 	var red = new AdditiveFilter(new Color(40, 0, 0));
 	red.name = "Red";
 	var green = new AdditiveFilter(new Color(0, 40, 0));
 	green.name = "Green";
 	var blue = new AdditiveFilter(new Color(0, 0, 40));
 	blue.name = "Blue";
+	var grayscale = new GrayscaleFilter();
+	grayscale.name = "Grayscale";
 	var edgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.edgeDetectionHard);
 	edgeDetection.name = "Edge Detection";
 	var emboss = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.emboss);
 	emboss.name = "Emboss";
 	var identity = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.identity);
+	identity.name = "Identity";
 	var brighten = new ConvolutionFilter(ConvolutionKernel.computeLightnessModifyingKernel(1.5));
 	brighten.name = "Lightness, 1.5";
+	var dim = new ConvolutionFilter(ConvolutionKernel.computeLightnessModifyingKernel(0.5));
+	dim.name = "Lightness, 0.5";
 	var coloredEdgeDetection = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.coloredEdgeDetection);
 	coloredEdgeDetection.name = "Colored Edge Detection";
 	var pixelize = new PixelizeFilter(10);
 	pixelize.name = "Pixelize";
-
+	var sharpen = new ConvolutionFilter(ConvolutionKernel.predefinedKernels.sharpen);
+	sharpen.name = "Sharpen";
 	var gaussian = new ConvolutionFilter(ConvolutionKernel.computeGaussianBlurKernel(10));
+	gaussian.name = "Gaussian";
 
 	var rotations = [new RotateFilter(0), new RotateFilter(Math.PI / 2), new RotateFilter(Math.PI), new RotateFilter(Math.PI * 1.5), red];
-	//var filter = new BlendFilter([gaussian, edgeDetection]);
+	var filter = new BlendFilter(rotations);
     //filter = new RotateFilter(Math.PI / 2);
 
 	//edgeDetection.transformImage(imageDataHelper);
@@ -113,7 +123,9 @@ var draw = function () {
 	//imageDataHelper.antialias();
     // End AA
 
-    filters = [red, green, blue, brighten, coloredEdgeDetection, edgeDetection, emboss, pixelize];
+    //filters = [identity, brighten, pixelize, red, green, blue, coloredEdgeDetection, edgeDetection, emboss];
+    //filters = [identity, brighten, dim, pixelize, gaussian, sharpen, coloredEdgeDetection, edgeDetection, emboss];
+    filters = [identity, red, green, blue, grayscale]
     var matrixSize = spreadArrayEvenly(filters.length);
     var size = {
         width: hiddenContext.canvas.width / matrixSize.width,
@@ -139,14 +151,21 @@ var draw = function () {
         }
     }
 
-    for (var i = 0; i < filters.length; i++) {
-    }
-	
-	//context.putImageData(imageDataHelper.imageData, 0, 0, 0, 0, imageData.width, imageData.height);
 
+
+   // imageDataHelper.antialias();
 	console.log("done", Date.now() - start);
 	//filter.kernel.prettyPrint();
 };
+
+window.addEventListener("keydown", function (args) {
+    if (args.keyCode == "T".charCodeAt(0)) {
+        var data = context.canvas.toDataURL();
+        console.log(data);
+        window.open(data, "_blank");
+    }
+});
+
 image.onload = function () {
     fixDimensions();
 }
