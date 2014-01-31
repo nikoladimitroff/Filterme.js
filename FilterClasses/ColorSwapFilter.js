@@ -35,14 +35,18 @@ var ColorSwapFilter = (function () {
             var color = imageDataHelper.colorAt(i);
             // If the color closely resembles on the spefied, swap
             if (this.targetColorPredicate(this.color1, color)) {
-                data[i] = this.color2.r;
-                data[i + 1] = this.color2.g;
-                data[i + 2] = this.color2.b;
+                var lightnessRatio = color.toHsl().l / this.color1.toHsl().l;
+
+                data[i] = ~~(this.color2.r * lightnessRatio);
+                data[i + 1] = ~~(this.color2.g * lightnessRatio);
+                data[i + 2] = ~~(this.color2.b * lightnessRatio);
             }
             if (this.targetColorPredicate(this.color2, color)) {
-                data[i] = this.color1.r;
-                data[i + 1] = this.color1.g;
-                data[i + 2] = this.color1.b;
+                var lightnessRatio = color.toHsl().l / this.color2.toHsl().l;
+
+                data[i] = ~~(this.color1.r * lightnessRatio);
+                data[i + 1] = ~~(this.color1.g * lightnessRatio);
+                data[i + 2] = ~~(this.color1.b * lightnessRatio);
             }
         }
     };

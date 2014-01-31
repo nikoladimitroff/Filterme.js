@@ -106,7 +106,7 @@ var ImageDataHelper = (function () {
 
         for (var i = 0; i < data.length; i += 4) {
             var coordinate = i;
-            var neighbours = imageDataHelper.getAreaColors(imageDataHelper.getNeighbours(coordinate));
+            var neighbours = this.getAreaColors(this.getNeighbours(coordinate));
             var totalColor = new Color(0, 0, 0);
             for (var k = 0; k < neighbours.length; k++) {
                 var current = neighbours[k];
@@ -115,7 +115,7 @@ var ImageDataHelper = (function () {
                 totalColor.g += current.g;
                 totalColor.b += current.b;
             }
-            var pixel = imageDataHelper.colorAt(coordinate);
+            var pixel = this.colorAt(coordinate);
             totalColor.r /= neighbours.length;
             totalColor.g /= neighbours.length;
             totalColor.b /= neighbours.length;

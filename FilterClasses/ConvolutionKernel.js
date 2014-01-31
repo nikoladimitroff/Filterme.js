@@ -17,24 +17,22 @@ var ConvolutionKernel = (function () {
         this.bias = bias || 0;
     };
 
-    ConvolutionKernel.prototype.multiplyImageAt = function (arrayCoordinate, imageDataHelper) {
-        if (imageDataHelper.constructor != ImageDataHelper)
-            throw new TypeError("imageDataHelper must be an instance of ImageDataHelper");
-
-        var areaColors = imageDataHelper.getAreaColors(imageDataHelper.getExtendedVirtualNeighbours(arrayCoordinate, this.size));
-        var total = new Color(0, 0, 0);
-        for (var i = 0; i < areaColors.length; i++) {
-            var multiplied = areaColors[i].scalarMultiply(this.kernel[i]);
-            total.r += multiplied.r;
-            total.g += multiplied.g;
-            total.b += multiplied.b;
-        };
-        total.r += this.bias;
-        total.g += this.bias;
-        total.b += this.bias;
-
-        return total;
+ConvolutionKernel.prototype.multiplyImageAt = function (arrayCoordinate, imageDataHelper) {
+    // Get the colors of all pixels in the neighbourhood
+    var areaColors = imageDataHelper.getAreaColors(imageDataHelper.getExtendedVirtualNeighbours(arrayCoordinate, this.size));
+    var total = new Color(0, 0, 0);
+    for (var i = 0; i < areaColors.length; i++) {
+        var multiplied = areaColors[i].scalarMultiply(this.kernel[i]);
+        total.r += multiplied.r;
+        total.g += multiplied.g;
+        total.b += multiplied.b;
     };
+    total.r += this.bias;
+    total.g += this.bias;
+    total.b += this.bias;
+
+    return total;
+};
 
     ConvolutionKernel.prototype.normalize = function () {
         var sum = 0;
@@ -103,17 +101,6 @@ var ConvolutionKernel = (function () {
                                           1, 1, 1, 1, 1,
                                           0, 1, 1, 1, 0,
                                           0, 0, 1, 0, 0])
-        },
-        gaussian: {
-            writable: false,
-            value: new ConvolutionKernel([
-            0.00000067, 0.00002292, 0.00019117, 0.00038771, 0.00019117, 0.00002292, 0.00000067,
-            0.00002292, 0.00078634, 0.00655965, 0.01330373, 0.00655965, 0.00078633, 0.00002292,
-            0.00019117, 0.00655965, 0.05472157, 0.11098164, 0.05472157, 0.00655965, 0.00019117,
-            0.00038771, 0.01330373, 0.11098164, 0.22508352, 0.11098164, 0.01330373, 0.00038771,
-            0.00019117, 0.00655965, 0.05472157, 0.11098164, 0.05472157, 0.00655965, 0.00019117,
-            0.00002292, 0.00078633, 0.00655965, 0.01330373, 0.00655965, 0.00078633, 0.00002292,
-            0.00000067, 0.00002292, 0.00019117, 0.00038771, 0.00019117, 0.00002292, 0.00000067])
         },
     });
 

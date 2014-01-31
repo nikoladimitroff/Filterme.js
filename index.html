@@ -4,6 +4,7 @@
 <style>
 	#filter-canvas {
 		border: 1px solid black;
+        z-index: 1;
 	}
 	
 	#hidden-canvas {
@@ -30,9 +31,33 @@
 	}
     nav {
         position: absolute;
-        top: 20%;
+        color: white;
+        background-color: rgba(100, 100, 100, 0.6);
+    }
+    #loading-overlay {
+        display: none;
+        position: absolute;
+        background-color: rgba(100, 100, 0, 0.3);
+        top: 0%;
+        left: 0%;
+        bottom: 0%;
+        right: 0%;
+        z-index: 2;
+    }
+    #loading-overlay .content {
+        position: absolute;
+        top: 0%;
+        left: 0%;
+        right: 0%;
+        bottom: 0%;
+        margin: auto;
+
+        width: 400px;
+        height: 100px;
+    }
+    #loading-overlay .content img {
+        position: relative;
         left: 20%;
-        background-color: ButtonFace;
     }
 </style>
 </head>
@@ -41,9 +66,31 @@
         <canvas id="filter-canvas" width="800px" height="600px"></canvas>
         <canvas id="hidden-canvas" width="800px" height="600px"></canvas>
     </div>
+    <nav>
+        <label for="show-ui">Show UI?</label>
+        <input type="checkbox" id="show-ui" data-bind="checked: showUI" />
+        <div id="main-ui" data-bind="visible: showUI">
+            <h5>Press 'T' to download the image.<br /> Note that Chrome is known to crash when downloading high resolution images from canvas, not much I can do.</h5>
+            <h6>All images belong to their respective authors.</h6>
+            <label for="antialias">Antialias?</label>
+            <input type="checkbox" id="antialias" data-bind="checked: antialias" />
+            <label for="selected-filter">Filter: </label>
+            <select id="selected-filter" data-bind="options: filters, optionsText: 'name', value: selectedFilter, optionsCaption: 'Select Filter'"></select>
+            <label for="selected-image">Image: </label>
+            <select id="selected-image" data-bind="options: images, optionsText: 'name', value: selectedImage, optionsCaption: 'Select Image'"></select>
+            <button id="repaint-button">Redraw</button>
+        </div>
+    </nav>
+    <div id="loading-overlay">
+        <div class="content">
+            <img src="Images/loading.gif" /><br>
+            Be patient, this might take some time (less than 20sec).
+        </div>
+    </div>
 
     <!-- External -->
     <script src="jquery-2.0.0.js"></script>
+    <script src="knockout-3.0.0.js"></script>
     <!-- Filters -->
     <script src="distribution/filterme.js"></script>
     <!-- Main script -->

@@ -41,7 +41,7 @@ var Color = (function () {
         return {
             h: H,
             s: S,
-            L: L
+            l: L
         };
     }
     
@@ -138,7 +138,8 @@ var Color = (function () {
                 return (this.r + this.g + this.b) / 3;
 
             case Color.grayscaleAlgorithms.geometricMean:
-                // Get the ratio of the geometric mean and the maximum geometric mean. Multiply that by 255 and convert to int
+                // We can't simply compute the geometric mean since it's value may be much more than 255. To fix that
+                // get the ratio of the geometric mean and the maximum geometric mean (white has the maximum geometric mean). Multiply that by 255 and convert to int
                 return ~~((this.calculateLength() / Color.basicColors.white.calculateLength()) * 255);
 
             default:
@@ -283,7 +284,7 @@ var ImageDataHelper = (function () {
 
         for (var i = 0; i < data.length; i += 4) {
             var coordinate = i;
-            var neighbours = imageDataHelper.getAreaColors(imageDataHelper.getNeighbours(coordinate));
+            var neighbours = this.getAreaColors(this.getNeighbours(coordinate));
             var totalColor = new Color(0, 0, 0);
             for (var k = 0; k < neighbours.length; k++) {
                 var current = neighbours[k];
@@ -292,7 +293,7 @@ var ImageDataHelper = (function () {
                 totalColor.g += current.g;
                 totalColor.b += current.b;
             }
-            var pixel = imageDataHelper.colorAt(coordinate);
+            var pixel = this.colorAt(coordinate);
             totalColor.r /= neighbours.length;
             totalColor.g /= neighbours.length;
             totalColor.b /= neighbours.length;
@@ -500,14 +501,18 @@ var ColorSwapFilter = (function () {
             var color = imageDataHelper.colorAt(i);
             // If the color closely resembles on the spefied, swap
             if (this.targetColorPredicate(this.color1, color)) {
-                data[i] = this.color2.r;
-                data[i + 1] = this.color2.g;
-                data[i + 2] = this.color2.b;
+                var lightnessRatio = color.toHsl().l / this.color1.toHsl().l;
+
+                data[i] = ~~(this.color2.r * lightnessRatio);
+                data[i + 1] = ~~(this.color2.g * lightnessRatio);
+                data[i + 2] = ~~(this.color2.b * lightnessRatio);
             }
             if (this.targetColorPredicate(this.color2, color)) {
-                data[i] = this.color1.r;
-                data[i + 1] = this.color1.g;
-                data[i + 2] = this.color1.b;
+                var lightnessRatio = color.toHsl().l / this.color2.toHsl().l;
+
+                data[i] = ~~(this.color1.r * lightnessRatio);
+                data[i + 1] = ~~(this.color1.g * lightnessRatio);
+                data[i + 2] = ~~(this.color1.b * lightnessRatio);
             }
         }
     };
@@ -534,20 +539,19 @@ var ConvolutionFilter = (function () {
 
     ConvolutionFilter.prototype.transformImage = function (imageDataHelper) {
         var size = imageDataHelper.data.length / 4;
+
         var imageData = imageDataHelper.data;
-        var renderTarget = [];
+        var renderTarget = new Uint8ClampedArray(imageData.length);
         for (var i = 0; i < size; i++) {
-            var transformed = this.kernel.multiplyImageAt(i * 4, imageDataHelper);
-            renderTarget.push(transformed);
+            var index = 4 * i;
+            var transformed = this.kernel.multiplyImageAt(index, imageDataHelper);
+            renderTarget[index] = transformed.r;
+            renderTarget[index + 1] = transformed.g;
+            renderTarget[index + 2] = transformed.b;
+            renderTarget[index + 3] = imageDataHelper.data[index + 3];
         }
 
-        var arrayCoordinate = 0;
-        for (var i = 0; i < renderTarget.length; i++) {
-            arrayCoordinate = i * 4;
-            imageData[arrayCoordinate] = renderTarget[i].r;
-            imageData[arrayCoordinate + 1] = renderTarget[i].g;
-            imageData[arrayCoordinate + 2] = renderTarget[i].b;
-        }
+        imageData.set(renderTarget);
     };
 
 
@@ -573,24 +577,22 @@ var ConvolutionKernel = (function () {
         this.bias = bias || 0;
     };
 
-    ConvolutionKernel.prototype.multiplyImageAt = function (arrayCoordinate, imageDataHelper) {
-        if (imageDataHelper.constructor != ImageDataHelper)
-            throw new TypeError("imageDataHelper must be an instance of ImageDataHelper");
-
-        var areaColors = imageDataHelper.getAreaColors(imageDataHelper.getExtendedVirtualNeighbours(arrayCoordinate, this.size));
-        var total = new Color(0, 0, 0);
-        for (var i = 0; i < areaColors.length; i++) {
-            var multiplied = areaColors[i].scalarMultiply(this.kernel[i]);
-            total.r += multiplied.r;
-            total.g += multiplied.g;
-            total.b += multiplied.b;
-        };
-        total.r += this.bias;
-        total.g += this.bias;
-        total.b += this.bias;
-
-        return total;
+ConvolutionKernel.prototype.multiplyImageAt = function (arrayCoordinate, imageDataHelper) {
+    // Get the colors of all pixels in the neighbourhood
+    var areaColors = imageDataHelper.getAreaColors(imageDataHelper.getExtendedVirtualNeighbours(arrayCoordinate, this.size));
+    var total = new Color(0, 0, 0);
+    for (var i = 0; i < areaColors.length; i++) {
+        var multiplied = areaColors[i].scalarMultiply(this.kernel[i]);
+        total.r += multiplied.r;
+        total.g += multiplied.g;
+        total.b += multiplied.b;
     };
+    total.r += this.bias;
+    total.g += this.bias;
+    total.b += this.bias;
+
+    return total;
+};
 
     ConvolutionKernel.prototype.normalize = function () {
         var sum = 0;
@@ -659,17 +661,6 @@ var ConvolutionKernel = (function () {
                                           1, 1, 1, 1, 1,
                                           0, 1, 1, 1, 0,
                                           0, 0, 1, 0, 0])
-        },
-        gaussian: {
-            writable: false,
-            value: new ConvolutionKernel([
-            0.00000067, 0.00002292, 0.00019117, 0.00038771, 0.00019117, 0.00002292, 0.00000067,
-            0.00002292, 0.00078634, 0.00655965, 0.01330373, 0.00655965, 0.00078633, 0.00002292,
-            0.00019117, 0.00655965, 0.05472157, 0.11098164, 0.05472157, 0.00655965, 0.00019117,
-            0.00038771, 0.01330373, 0.11098164, 0.22508352, 0.11098164, 0.01330373, 0.00038771,
-            0.00019117, 0.00655965, 0.05472157, 0.11098164, 0.05472157, 0.00655965, 0.00019117,
-            0.00002292, 0.00078633, 0.00655965, 0.01330373, 0.00655965, 0.00078633, 0.00002292,
-            0.00000067, 0.00002292, 0.00019117, 0.00038771, 0.00019117, 0.00002292, 0.00000067])
         },
     });
 
@@ -793,7 +784,7 @@ var GrayscaleFilter = (function () {
 
     inheritClassFrom(GrayscaleFilter, Filter);
 
-    GrayscaleFilter.prototype.transformImage = function (imageDataHelper) {
+    GrayscaleFilter.prototype.transformImage = function (imageDataHelper, progress) {
         var data = imageDataHelper.data;
         for (var i = 0; i < data.length; i += 4) {
             var color = imageDataHelper.colorAt(i);
@@ -818,14 +809,13 @@ var InvertFilter = (function () {
     inheritClassFrom(InvertFilter, Filter);
 
 
-    InvertFilter.prototype.transformImage = function (imageDataHelper) {
+    InvertFilter.prototype.transformImage = function (imageDataHelper, progress) {
         var data = imageDataHelper.data;
         for (var i = 0; i < data.length; i += 4) {
             var inverted = imageDataHelper.colorAt(i).invert();
             data[i] = inverted.r;
             data[i + 1] = inverted.g;
             data[i + 2] = inverted.b;
-
         }
     };
 
@@ -855,30 +845,31 @@ var LayeredFilter = (function () {
 
     return LayeredFilter;
 })();
-///#source 1 1 /Filters/FilterClasses/PixelizeFilter.js
+///#source 1 1 /Filters/FilterClasses/PixelateFilter.js
 /// <reference path="../ImageDataHelper.js" />
 /// <reference path="../Color.js" />
 /// <reference path="Filter.js" />
-var PixelizeFilter = (function () {
-    function PixelizeFilter(level) {
+var PixelateFilter = (function () {
+    function PixelateFilter(level) {
         if (level.constructor != Number) {
             throw new TypeError("level must be an instance of Number");
         }
         this.level = ~~level;
     };
 
-    inheritClassFrom(PixelizeFilter, Filter);
+    inheritClassFrom(PixelateFilter, Filter);
 
-    PixelizeFilter.prototype.transformImage = function (imageDataHelper) {
-        imageDataHelper = imageDataHelper || new ImageDataHelper();
+    PixelateFilter.prototype.transformImage = function (imageDataHelper) {
         var data = imageDataHelper.data;
         var step = 4 * this.level;
         var levelOverTwo = ~~(this.level / 2);
         
+        // Loop trough the image but skip all rows and columns whose indices are not divisible by our pixelation level
         for (var x = 0; x < imageDataHelper.imageData.width; x += this.level) {
             for (var y = 0; y < imageDataHelper.imageData.height; y += this.level) {
                 var index = imageDataHelper.xyToArrayCoordinate(x, y);
                 var color = imageDataHelper.colorAt(index);
+                // Get the indices of all colors in the square with size = this.level and set their color to the color of pixel in the middle
                 var neighbours = imageDataHelper.getExtendedVirtualNeighbours(index, this.level);
                 for (var j = 0; j < neighbours.length; j++) {
                     data[neighbours[j]] = color.r;
@@ -887,10 +878,9 @@ var PixelizeFilter = (function () {
                 }
             }
         }
-
     };
 
-    return PixelizeFilter;
+    return PixelateFilter;
 })();
 ///#source 1 1 /Filters/FilterClasses/RotateFilter.js
 /// <reference path="../ImageDataHelper.js" />
@@ -974,14 +964,14 @@ var RotateFilter = (function () {
 /// <reference path="Filter.js" />
 var EmphasizeColorFilter = (function () {
 
-    function EmphasizeColorFilter(targetColor, predicateThreshold, grayscaleAlgo, usePerComponentPredicate) {
+    function EmphasizeColorFilter(targetColor, threshold, grayscaleAlgo, usePerComponentPredicate) {
         if (targetColor.constructor != Color)
             throw new TypeError("targetColor must be a instance of Color");
-        if (predicateThreshold.constructor != Number || predicateThreshold <= 0)
-            throw new TypeError("predicateThreshold must be a positive number");
+        if (threshold.constructor != Number || threshold <= 0)
+            throw new TypeError("threshold must be a positive number");
 
         this.targetColor = targetColor;
-        this.predicateThreshold = predicateThreshold;
+        this.threshold = threshold;
         this.grayscaleAlgo = grayscaleAlgo || Color.grayscaleAlgorithms.arithmeticMean;
         this.usePerComponentPredicate = Boolean(usePerComponentPredicate);
     };
@@ -989,20 +979,19 @@ var EmphasizeColorFilter = (function () {
     inheritClassFrom(EmphasizeColorFilter, Filter);
 
     EmphasizeColorFilter.prototype.targetColorPredicate = function (color) {
-        // In case we are using per component different
+        // In case we are using per component difference
         if (this.usePerComponentPredicate) {
-            return Color.areTooDifferentPerComponent(this.targetColor, color, this.predicateThreshold);
+            return Color.areTooDifferentPerComponent(this.targetColor, color, this.threshold);
         }
-
         // If the geometric distance between the color is larger than a threshold
-        return this.targetColor.calculateDistanceTo(color) >= this.predicateThreshold;
+        return this.targetColor.calculateDistanceTo(color) >= this.threshold;
     };
 
     EmphasizeColorFilter.prototype.transformImage = function (imageDataHelper) {
         var data = imageDataHelper.data;
         for (var i = 0; i < data.length; i += 4) {
             var color = imageDataHelper.colorAt(i);
-
+            // If the predicate is true, that is the color is different enough than our target
             if (this.targetColorPredicate(color)) {
                 var grayscale = color.toGrayscale(this.grayscaleAlgo);
                 data[i] = data[i + 1] = data[i + 2] = grayscale;

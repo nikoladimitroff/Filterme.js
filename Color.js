@@ -40,7 +40,7 @@ var Color = (function () {
         return {
             h: H,
             s: S,
-            L: L
+            l: L
         };
     }
     
@@ -137,7 +137,8 @@ var Color = (function () {
                 return (this.r + this.g + this.b) / 3;
 
             case Color.grayscaleAlgorithms.geometricMean:
-                // Get the ratio of the geometric mean and the maximum geometric mean. Multiply that by 255 and convert to int
+                // We can't simply compute the geometric mean since it's value may be much more than 255. To fix that
+                // get the ratio of the geometric mean and the maximum geometric mean (white has the maximum geometric mean). Multiply that by 255 and convert to int
                 return ~~((this.calculateLength() / Color.basicColors.white.calculateLength()) * 255);
 
             default:

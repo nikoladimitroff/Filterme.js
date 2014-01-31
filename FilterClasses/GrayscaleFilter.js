@@ -9,7 +9,7 @@ var GrayscaleFilter = (function () {
 
     inheritClassFrom(GrayscaleFilter, Filter);
 
-    GrayscaleFilter.prototype.transformImage = function (imageDataHelper) {
+    GrayscaleFilter.prototype.transformImage = function (imageDataHelper, progress) {
         var data = imageDataHelper.data;
         for (var i = 0; i < data.length; i += 4) {
             var color = imageDataHelper.colorAt(i);
