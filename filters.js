@@ -19,11 +19,15 @@ $(document).ready(function () {
     var imageSources = ["Images/walle.jpg", "Images/tiger.jpg", "Images/leaves.jpg", "Images/blue-red.jpg"];
 
     var loaded = 0;
+    // Show the overlay while loading images
+    $("#loading-overlay").show();
     function onImageLoaded() {
         loaded++;
         if (loaded == imageSources.length) {
             viewmodel.selectedFilter(viewmodel.filters()[0]);
             viewmodel.selectedImage(viewmodel.images()[0]);
+            // Hide it before drawing the first image
+            $("#loading-overlay").hide();
             run();
         }
     }
